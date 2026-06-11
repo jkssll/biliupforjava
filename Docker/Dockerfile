@@ -14,11 +14,8 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# 正确方式创建文件（不需要 bash）
-RUN touch /ROOT.war
-
-# 添加你的 JAR 文件（这句应该在前面，不是创建空文件）
-ADD ROOT.war /ROOT.war
+# 添加 WAR 文件
+ADD target/ROOT.war /ROOT.war
 
 EXPOSE 80
 
