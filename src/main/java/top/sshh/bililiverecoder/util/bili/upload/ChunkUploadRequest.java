@@ -1,6 +1,7 @@
 package top.sshh.bililiverecoder.util.bili.upload;
 
 import org.apache.http.entity.InputStreamEntity;
+import top.sshh.bililiverecoder.util.RateLimitedInputStream;
 import top.sshh.bililiverecoder.util.ShardingInputStream;
 import top.sshh.bililiverecoder.util.bili.HttpClientResult;
 import top.sshh.bililiverecoder.util.bili.HttpClientUtils;
@@ -46,7 +47,7 @@ public class ChunkUploadRequest {
      */
     public String getPage() throws IOException, NoSuchAlgorithmException, KeyStoreException, URISyntaxException, KeyManagementException {
         ShardingInputStream inputStream = new ShardingInputStream(file, Long.parseLong(params.get("start")), Long.parseLong(params.get("end")));
-        InputStreamEntity body = new InputStreamEntity(inputStream, Long.parseLong(params.get("size")));
+        InputStreamEntity body = new InputStreamEntity(new RateLimitedInputStream(inputStream), Long.parseLong(params.get("size")));
         HttpClientResult result = HttpClientUtils.doPut(URL, headers, params, body, Integer.parseInt(preUploadBean.getTimeout()) * 1000);
         int code = result.getCode();
         if (code != 200) {

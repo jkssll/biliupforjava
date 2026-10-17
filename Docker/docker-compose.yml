@@ -1,0 +1,22 @@
+services:
+  bup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: biliupforjava:latest
+    container_name: bup
+    restart: unless-stopped
+    ports:
+      # 宿主机端口:容器内端口（容器内固定 80）
+      - "${HOST_PORT:-12380}:80"
+    environment:
+      TZ: Asia/Shanghai
+      # 两个都设置才会开启网页登录验证
+      JAVA_OPTS: >-
+        -Drecord.userName=${WEB_USER:-}
+        -Drecord.password=${WEB_PASSWORD:-}
+        -Duser.timezone=Asia/Shanghai
+    volumes:
+      # 保存数据库、日志、录制文件，请改成 NAS 上的实际目录
+      - "${DATA_DIR:-./data}:/bilirecord"
+    mem_limit: 512m

@@ -1,0 +1,57 @@
+name: Build Docker Image For NAS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - web_local
+      - master
+      - main
+    paths:
+      - 'src/**'
+      - 'pom.xml'
+      - 'Docker/**'
+      - '.github/workflows/docker-image.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Build WAR
+        run: mvn -B package -DskipTests
+
+      - name: Prepare Docker context
+        run: |
+          set -e
+          WAR_FILE=$(ls target/*.war | head -n 1)
+          cp "$WAR_FILE" Docker/ROOT.war
+          ls -lh Docker/ROOT.war
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        working-directory: Docker
+        run: docker buildx build --platform linux/amd64 --load -t biliupforjava:latest .
+
+      - name: Export Docker image
+        run: docker save -o biliupforjava-latest.tar biliupforjava:latest
+
+      - name: Upload image tar
+        uses: actions/upload-artifact@v4
+        with:
+          name: biliupforjava-docker-image
+          path: biliupforjava-latest.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

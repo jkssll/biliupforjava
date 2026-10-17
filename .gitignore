@@ -1,0 +1,9 @@
+# 构建产物
+/target/
+/.idea/
+/docker-package/
+/Docker/ROOT.war
+
+# 本地打包文件
+/biliupforjava-docker-fnOS.zip
+/*.tar

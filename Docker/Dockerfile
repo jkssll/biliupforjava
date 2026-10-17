@@ -15,7 +15,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # 添加 WAR 文件
-ADD target/ROOT.war /ROOT.war
+ADD ROOT.war /ROOT.war
 
 EXPOSE 80
 

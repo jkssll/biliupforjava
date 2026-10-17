@@ -20,7 +20,7 @@ public class ChunkUploadRequestBody extends RequestBody {
 
     public ChunkUploadRequestBody(InputStream in) {
         super();
-        this.in = in;
+        this.in = new RateLimitedInputStream(in);
     }
 
     @Override

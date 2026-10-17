@@ -1,5 +1,6 @@
 <div class="container" id="userTable">
     <el-button @click="getLoginImage();dialogLoginVisible = true" type="primary">登录</el-button>
+    <el-button @click="openRateDialog" type="primary">全局上传限速</el-button>
     <el-table
             v-loading="loading"
             :data="tableData"
@@ -80,6 +81,26 @@
         </div>
     </el-dialog>
 
+    <el-dialog :visible.sync="dialogRateVisible" title="全局上传限速">
+        <el-form :label-width="formLabelWidth">
+            <el-form-item label="上传限速">
+                <el-input-number :max="1048576" :min="0" :step="128" controls-position="right"
+                                 v-model="uploadRateKb"></el-input-number>
+                <span style="margin-left: 10px">KB/s（0 表示不限速，1024 KB/s = 1 MB/s）</span>
+            </el-form-item>
+            <el-form-item>
+                <div style="color: #909399; line-height: 22px;">
+                    全局生效：所有直播间、所有上传线路共用该带宽。<br>
+                    保存后立即生效，建议不要低于 128 KB/s。
+                </div>
+            </el-form-item>
+        </el-form>
+        <div class="dialog-footer" slot="footer">
+            <el-button @click="dialogRateVisible = false">取 消</el-button>
+            <el-button :loading="rateSaving" @click="saveUploadRate" type="primary">保 存</el-button>
+        </div>
+    </el-dialog>
+
     <el-dialog :visible.sync="dialogFormVisible" title="用户信息">
         <el-form :model="user">
             <el-form-item :label-width="formLabelWidth" label="是否启用弹幕发送">
@@ -102,6 +123,9 @@
             formLabelWidth: '150px',
             dialogFormVisible: false,
             dialogLoginVisible: false,
+            dialogRateVisible: false,
+            uploadRateKb: 0,
+            rateSaving: false,
             tableData: [],
             user: {},
             image: '',
@@ -109,6 +133,51 @@
             loading: false
         },
         methods: {
+            loadUploadRate: function () {
+                let _this = this;
+                $.ajax({
+                    url: '/config/uploadRate',
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.uploadRateKb = data.limitKb || 0;
+                    }
+                });
+            },
+            openRateDialog: function () {
+                this.loadUploadRate();
+                this.dialogRateVisible = true;
+            },
+            saveUploadRate: function () {
+                let _this = this;
+                if (_this.rateSaving) {
+                    return;
+                }
+                _this.rateSaving = true;
+                let limitKb = _this.uploadRateKb == null ? 0 : _this.uploadRateKb;
+                $.ajax({
+                    url: '/config/uploadRate',
+                    type: 'post',
+                    data: {limitKb: limitKb},
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.rateSaving = false;
+                        _this.uploadRateKb = data.limitKb || 0;
+                        _this.dialogRateVisible = false;
+                        _this.$message({
+                            message: data.limitKb === 0 ? '已取消上传限速' : '上传限速已设置为 ' + data.limitKb + ' KB/s',
+                            type: 'success'
+                        });
+                    },
+                    error: function () {
+                        _this.rateSaving = false;
+                        _this.$message({
+                            message: '保存失败，请稍后重试',
+                            type: 'error'
+                        });
+                    }
+                });
+            },
             initTable: function () {
                 let _this = this;
                 _this.loading = true;
@@ -190,6 +259,7 @@
             },
         },
         created: function created() {
+            this.loadUploadRate();
             this.initTable();
         }
     });
