@@ -359,8 +359,10 @@ public class RoomController {
         if (roomOptional.isPresent()) {
             RecordRoom room = roomOptional.get();
             if (room.getUploadUserId() != null) {
-                BiliBiliUser biliUser = userRepository.findById(room.getUploadUserId()).get();
-                return BiliApi.getSeasons(biliUser);
+                Optional<BiliBiliUser> userOptional = userRepository.findById(room.getUploadUserId());
+                if (userOptional.isPresent()) {
+                    return BiliApi.getSeasons(userOptional.get());
+                }
             }
         }
         return null;

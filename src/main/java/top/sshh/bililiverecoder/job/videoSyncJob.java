@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -59,8 +60,18 @@ public class videoSyncJob {
                 continue;
             }
             BiliBiliUser user = null;
-            if(room.getIsOnlySelf() == 1){
-                user = userRepository.findById(room.getUploadUserId()).get();
+            if (room.getIsOnlySelf() == 1) {
+                if (room.getUploadUserId() == null) {
+                    log.error("同步视频状态，房间{}未设置上传用户，跳过视频{}", room.getRoomId(), next.getBvId());
+                    continue;
+                }
+                Optional<BiliBiliUser> userOptional = userRepository.findById(room.getUploadUserId());
+                if (userOptional.isEmpty()) {
+                    log.error("同步视频状态，房间{}的上传用户{}不存在（可能已被删除），跳过视频{}",
+                            room.getRoomId(), room.getUploadUserId(), next.getBvId());
+                    continue;
+                }
+                user = userOptional.get();
             }
             BiliVideoInfoResponse videoInfoResponse = BiliApi.getVideoInfo(user,next.getBvId());
             int code = videoInfoResponse.getCode();
